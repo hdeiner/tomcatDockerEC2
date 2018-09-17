@@ -33,6 +33,6 @@ if (Select-String -Pattern "<h1>Hello World!</h1>" temp) {
     Write-host "Push the Docker Tomcat release image to the Docker Hub registry"
     docker push howarddeiner/tomcattest:releasecopy
 } else {
-    echo "DOCKER CREATION/DEPLOYMENT WAS NOT SUCCESSFUL!"
+    Write-host "DOCKER CREATION/DEPLOYMENT WAS NOT SUCCESSFUL!"
 }
 rm temp

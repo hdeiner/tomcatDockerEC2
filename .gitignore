@@ -21,3 +21,7 @@ target/
 /.vs/tomcatDockerEC2/v15/.suo
 /.vs/VSWorkspaceState.json
 /.vs/slnx.sqlite
+/terraform/.terraform/plugins/windows_amd64/lock.json
+/terraform/.terraform/plugins/windows_amd64/terraform-provider-aws_v1.36.0_x4.exe
+/terraform/terraform.tfstate.backup
+/terraform/terraform.tfstate
