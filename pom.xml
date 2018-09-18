@@ -31,8 +31,8 @@
         </dependency>
         <dependency>
             <groupId>net.masterthought</groupId>
-            <artifactId>maven-cucumber-reporting</artifactId>
-            <version>2.3.0</version>
+            <artifactId>cucumber-reporting</artifactId>
+            <version>3.15.0</version>
         </dependency>
     </dependencies>
 
