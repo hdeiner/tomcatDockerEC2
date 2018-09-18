@@ -2,17 +2,18 @@ package com.deinersoft;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
-import sun.security.util.PendingException;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.ProcessBuilder;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class Stepdefs {
+
+    private String OS = System.getProperty("os.name").toLowerCase();
 
     private String tomcat_dns;
     private List<String> remoteNetstatResults;
@@ -22,8 +23,14 @@ public class Stepdefs {
         String tomcat_dns = "";
 
         Process p = null;
-        ProcessBuilder pb = new ProcessBuilder("/usr/sbin/terraform", "output", "tomcat_dns");
-        pb.directory(new File("terraform"));
+        ProcessBuilder pb = null;
+        if (isWindows()) {
+            pb = new ProcessBuilder("C:\\Program Files\\Terraform\\terraform.exe", "output", "tomcat_dns");
+            pb.directory(new File("C:\\Users\\Howard Deiner\\IdeaProjects\\tomcatDockerEC2\\terraform"));
+        } else {
+            pb = new ProcessBuilder("/usr/sbin/terraform", "output", "tomcat_dns");
+            pb.directory(new File("terraform"));
+        }
         p = pb.start();
 
         BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -31,6 +38,7 @@ public class Stepdefs {
 
         String s = null;
         while ((s = stdInput.readLine()) != null) {
+            System.out.println("Looking at terraformed " + s);
             tomcat_dns = s;
         }
 
@@ -45,11 +53,38 @@ public class Stepdefs {
     public void i_created_an_instance_for_Tomcat(String instanceType) throws Throwable {
         tomcat_dns = getEC2InstanceForTomcat();
 
-        String[] cmd1 = {"/usr/bin/ssh", "-o", "StrictHostKeyChecking=no", "ubuntu@"+tomcat_dns, "sudo docker ps"};
-        remoteDockerResults = runShellCommand(cmd1);
+        String[] cmd = new String[5];
+        if (isWindows()) {
+            cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
+            cmd[1] = "-o";
+            cmd[2] = "StrictHostKeyChecking=no";
+            cmd[3] = "ubuntu@"+tomcat_dns;
+            cmd[4] = "sudo docker ps";
+        } else {
+            cmd[0] = "/usr/bin/ssh";
+            cmd[1] = "-o";
+            cmd[2] = "StrictHostKeyChecking=no";
+            cmd[3] = "ubuntu@"+tomcat_dns;
+            cmd[4] = "sudo docker ps";
+        }
+        System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
+        remoteDockerResults = runShellCommand(cmd);
 
-        String[] cmd2 = {"/usr/bin/ssh", "-o", "StrictHostKeyChecking=no", "ubuntu@"+tomcat_dns, "sudo netstat -tulpn"};
-        remoteNetstatResults = runShellCommand(cmd2);
+        if (isWindows()) {
+            cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
+            cmd[1] = "-o";
+            cmd[2] = "StrictHostKeyChecking=no";
+            cmd[3] = "ubuntu@"+tomcat_dns;
+            cmd[4] = "sudo netstat -tulpn";
+        } else {
+            cmd[0] = "/usr/bin/ssh";
+            cmd[1] = "-o";
+            cmd[2] = "StrictHostKeyChecking=no";
+            cmd[3] = "ubuntu@"+tomcat_dns;
+            cmd[4] = "sudo netstat -tulpn";
+        }
+        System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
+        remoteNetstatResults = runShellCommand(cmd);
     }
 
     @Then("^the instance should be running \"([^\"]*)\" on port \"([^\"]*)\"$")
@@ -103,7 +138,18 @@ public class Stepdefs {
     }
 
     private boolean isPortOpen(String portNumber) throws IOException {
-        String[] cmd = {"nmap", tomcat_dns, "-p", portNumber};
+        String[] cmd = new String[4];
+        if (isWindows()) {
+            cmd[0] = "C:\\Program Files (x86)\\Nmap\\nmap.exe";
+            cmd[1] = tomcat_dns;
+            cmd[2] = "-p";
+            cmd[3] = portNumber;
+        } else {
+            cmd[0] = "nmap";
+            cmd[1] = tomcat_dns;
+            cmd[2] = "-p";
+            cmd[3] = portNumber;
+        }
         List<String> nmapResults = runShellCommand(cmd);
         boolean result = false;
         for (String s : nmapResults) {
@@ -112,4 +158,34 @@ public class Stepdefs {
         }
         return result;
     }
+
+    public boolean isWindows() {
+        return (OS.indexOf("win") >= 0);
+    }
+
+    public boolean isMac() {
+        return (OS.indexOf("mac") >= 0);
+    }
+
+    public boolean isUnix() {
+        return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 );
+    }
+
+    public boolean isSolaris() {
+        return (OS.indexOf("sunos") >= 0);
+    }
+    public String getOS(){
+        if (isWindows()) {
+            return "win";
+        } else if (isMac()) {
+            return "osx";
+        } else if (isUnix()) {
+            return "uni";
+        } else if (isSolaris()) {
+            return "sol";
+        } else {
+            return "err";
+        }
+    }
+
 }
