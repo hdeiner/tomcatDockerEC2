@@ -17,8 +17,8 @@ Write-host "Pause 5 seconds to allow Tomcat to start up"
 Start-Sleep -s 5
 
 Write-host "Smoke test"
-curl http://localhost:8080/hello-world/index.jsp > temp
-if (Select-String -Pattern "<h1>Hello World!</h1>" temp) {
+curl http://localhost:8080/passwordAPI/passwordRules/abcde > temp
+if (Select-String -Pattern @"{"password": "abcde","passwordRules":"password must be at least 8 characters long"}" temp) {
     Write-host "deployment was successful"
     
 	Write-host "Stop the Docker Tomcat container (Windows does not allow a commit on a running container)"

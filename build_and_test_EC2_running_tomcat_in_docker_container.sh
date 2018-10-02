@@ -12,8 +12,8 @@ echo Give Tomcat 5 seconds to get online
 sleep 5
 
 echo Smoke test
-curl -s $TOMCAT:8080/hello-world/index.jsp > temp
-if grep -q "<h1>Hello World!</h1>" temp
+curl -s $TOMCAT:8080/passwordAPI/passwordRules/abcde > temp
+if grep -q "\{\"password\"\: \"abcde\",\"passwordRules\"\:\"password must be at least 8 characters long\"\}" temp
 then
     echo "deployment was successful"
 else
