@@ -15,20 +15,24 @@ public class Stepdefs {
 
     private String OS = System.getProperty("os.name").toLowerCase();
 
-    private String tomcat_dns;
-    private List<String> remoteNetstatResults;
-    private List<String> remoteDockerResults;
+    private String oracle_dns;
+    private List<String> remoteNetstatOracleResults;
+    private List<String> remoteDockerOracleResults;
 
-    private String getEC2InstanceForTomcat() throws IOException, InterruptedException {
-        String tomcat_dns = "";
+    private String tomcat_dns;
+    private List<String> remoteNetstatTomcatResults;
+    private List<String> remoteDockerTomcatResults;
+
+    private String getEC2InstanceData(String instanceDns) throws IOException, InterruptedException {
+        String instance_dns = "";
 
         Process p = null;
         ProcessBuilder pb = null;
         if (isWindows()) {
-            pb = new ProcessBuilder("C:\\Program Files\\Terraform\\terraform.exe", "output", "tomcat_dns");
+            pb = new ProcessBuilder("C:\\Program Files\\Terraform\\terraform.exe", "output", instanceDns);
             pb.directory(new File("C:\\Users\\Howard Deiner\\IdeaProjects\\tomcatDockerEC2\\terraform"));
         } else {
-            pb = new ProcessBuilder("/usr/sbin/terraform", "output", "tomcat_dns");
+            pb = new ProcessBuilder("/usr/sbin/terraform", "output", instanceDns);
             pb.directory(new File("terraform"));
         }
         p = pb.start();
@@ -38,53 +42,91 @@ public class Stepdefs {
 
         String s = null;
         while ((s = stdInput.readLine()) != null) {
-            System.out.println("Looking at terraformed " + s);
-            tomcat_dns = s;
+//            System.out.println("Looking at terraformed " + s);
+            instance_dns = s;
         }
 
         while ((s = stdError.readLine()) != null) {
             System.out.println("!!! " + s);
         }
 
-        return tomcat_dns;
+        return instance_dns;
     }
 
-    @Given("^I created an \"([^\"]*)\" instance for Tomcat$")
-    public void i_created_an_instance_for_Tomcat(String instanceType) throws Throwable {
-        tomcat_dns = getEC2InstanceForTomcat();
+    @Given("^I created an \"([^\"]*)\" instance for \"([^\"]*)\"$")
+    public void i_created_an_instance(String instanceType, String serverType) throws Throwable {
+        if (serverType.equals("Oracle")) {
+            oracle_dns = getEC2InstanceData("oracle_dns");
+            tomcat_dns = "";
+            String[] cmd = new String[5];
+            if (isWindows()) {
+                cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+oracle_dns;
+                cmd[4] = "sudo docker ps";
+            } else {
+                cmd[0] = "/usr/bin/ssh";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+oracle_dns;
+                cmd[4] = "sudo docker ps";
+            }
+//            System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
+            remoteDockerOracleResults = runShellCommand(cmd);
 
-        String[] cmd = new String[5];
-        if (isWindows()) {
-            cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
-            cmd[1] = "-o";
-            cmd[2] = "StrictHostKeyChecking=no";
-            cmd[3] = "ubuntu@"+tomcat_dns;
-            cmd[4] = "sudo docker ps";
-        } else {
-            cmd[0] = "/usr/bin/ssh";
-            cmd[1] = "-o";
-            cmd[2] = "StrictHostKeyChecking=no";
-            cmd[3] = "ubuntu@"+tomcat_dns;
-            cmd[4] = "sudo docker ps";
+            if (isWindows()) {
+                cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+oracle_dns;
+                cmd[4] = "sudo netstat -tulpn";
+            } else {
+                cmd[0] = "/usr/bin/ssh";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+oracle_dns;
+                cmd[4] = "sudo netstat -tulpn";
+            }
+//            System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
+            remoteNetstatOracleResults = runShellCommand(cmd);
         }
-        System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
-        remoteDockerResults = runShellCommand(cmd);
+        if (serverType.equals("Tomcat")) {
+            oracle_dns = "";
+            tomcat_dns = getEC2InstanceData("tomcat_dns");
+            String[] cmd = new String[5];
+            if (isWindows()) {
+                cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+tomcat_dns;
+                cmd[4] = "sudo docker ps";
+            } else {
+                cmd[0] = "/usr/bin/ssh";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+tomcat_dns;
+                cmd[4] = "sudo docker ps";
+            }
+//            System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
+            remoteDockerTomcatResults = runShellCommand(cmd);
 
-        if (isWindows()) {
-            cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
-            cmd[1] = "-o";
-            cmd[2] = "StrictHostKeyChecking=no";
-            cmd[3] = "ubuntu@"+tomcat_dns;
-            cmd[4] = "sudo netstat -tulpn";
-        } else {
-            cmd[0] = "/usr/bin/ssh";
-            cmd[1] = "-o";
-            cmd[2] = "StrictHostKeyChecking=no";
-            cmd[3] = "ubuntu@"+tomcat_dns;
-            cmd[4] = "sudo netstat -tulpn";
+            if (isWindows()) {
+                cmd[0] = "C:\\Windows\\System32\\OpenSSH\\ssh.exe";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+tomcat_dns;
+                cmd[4] = "sudo netstat -tulpn";
+            } else {
+                cmd[0] = "/usr/bin/ssh";
+                cmd[1] = "-o";
+                cmd[2] = "StrictHostKeyChecking=no";
+                cmd[3] = "ubuntu@"+tomcat_dns;
+                cmd[4] = "sudo netstat -tulpn";
+            }
+//            System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
+            remoteNetstatTomcatResults = runShellCommand(cmd);
         }
-        System.out.println(cmd[0] + " " + cmd[1] + " " + cmd[2] + " " + cmd[3] + " " + cmd[4]);
-        remoteNetstatResults = runShellCommand(cmd);
     }
 
     @Then("^the instance should be running \"([^\"]*)\" on port \"([^\"]*)\"$")
@@ -94,12 +136,22 @@ public class Stepdefs {
 
     @Then("^Docker should be running image \"([^\"]*)\"$")
     public void docker_should_be_running_image(String arg1) throws Throwable {
-        assertThat(remoteDockerResults.get(1).contains(arg1), is(true));
+        if (oracle_dns.length() > 0) {
+            assertThat(remoteDockerOracleResults.get(1).contains(arg1), is(true));
+        }
+        if (tomcat_dns.length() > 0) {
+            assertThat(remoteDockerTomcatResults.get(1).contains(arg1), is(true));
+        }
     }
 
     @Then("^Docker should be redirecting port \"([^\"]*)\" port \"([^\"]*)\" to port \"([^\"]*)\"$")
     public void docker_should_be_redirecting_port_port_to_port(String arg1, String arg2, String arg3) throws Throwable {
-        assertThat(remoteDockerResults.get(1).contains(arg3+"->"+arg2+"/"+arg1), is(true));
+        if (oracle_dns.length() > 0) {
+            assertThat(remoteDockerOracleResults.get(1).contains(arg3+"->"+arg2+"/"+arg1), is(true));
+        }
+        if (tomcat_dns.length() > 0) {
+            assertThat(remoteDockerTomcatResults.get(1).contains(arg3+"->"+arg2+"/"+arg1), is(true));
+        }
     }
 
     @Then("^\"([^\"]*)\" inbound port \"([^\"]*)\" should be open$")
@@ -129,6 +181,11 @@ public class Stepdefs {
     }
 
     private boolean isProgramRunningOnPort(String programName, String portNumber) {
+        List<String> remoteNetstatResults = null;
+
+        if (oracle_dns.length() > 0) {remoteNetstatResults = remoteNetstatOracleResults; }
+        if (tomcat_dns.length() > 0) {remoteNetstatResults = remoteNetstatTomcatResults; }
+
         boolean result = false;
         for (String s : remoteNetstatResults) {
             String regEx = "^tcp\\d*\\s*\\d*\\s*\\d*\\s*[0127\\.\\:]+" + portNumber + "\\s*[0\\.\\:]+\\*\\s*LISTEN\\s*\\d+\\/" + programName + ".*$";
@@ -138,15 +195,20 @@ public class Stepdefs {
     }
 
     private boolean isPortOpen(String portNumber) throws IOException {
+        String whichDns = "";
+
+        if (oracle_dns.length() > 0) { whichDns = oracle_dns; }
+        if (tomcat_dns.length() > 0) { whichDns = tomcat_dns; }
+
         String[] cmd = new String[4];
         if (isWindows()) {
             cmd[0] = "C:\\Program Files (x86)\\Nmap\\nmap.exe";
-            cmd[1] = tomcat_dns;
+            cmd[1] = whichDns;
             cmd[2] = "-p";
             cmd[3] = portNumber;
         } else {
             cmd[0] = "nmap";
-            cmd[1] = tomcat_dns;
+            cmd[1] = whichDns;
             cmd[2] = "-p";
             cmd[3] = portNumber;
         }
