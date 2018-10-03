@@ -15,6 +15,6 @@ sudo apt-get install -y docker-ce
 # AUTHENTICATE - FIX  THIS!!!
 sudo docker login -u howarddeiner -p hjd001
 
-# Start up private Docker registry image for Tomcat provisioned server
+# Start up private Docker registry image for MSSQLSVR
 sudo docker network create dockernet
-sudo docker run -d -p 8080:8080 --name tomcattest --network dockernet howarddeiner/tomcattest:releaseawsoracle
+sudo docker run -d -p 1521:1521 -p 8080:8080 -e ORACLE_ALLOW_REMOTE=true --name oracletest --network dockernet howarddeiner/oracletest:release
