@@ -3,7 +3,7 @@
 # don't create Tomcat instances yet
 sed -i -r 's/count\s+\=\s+[0-9]+/count = 0/g' terraform/terraformResourceTomcat.tf
 
-# create the test infrasctucture for Tomcat
+# create the test infrasctucture for Oracle
 cd terraform
 terraform init
 terraform apply -auto-approve
